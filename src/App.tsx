@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import yaml from "js-yaml";
 import raw from "./data/questions.yaml?raw";
 import FlashCard from "./components/FlashCard";
