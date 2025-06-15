@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import yaml from "js-yaml";
 import { categories } from "./data/categories";
 import FlashCard from "./components/FlashCard";
@@ -47,8 +47,8 @@ function App() {
     const loader = files[path];
 
     if (loader) {
-      loader().then((rawYaml: string) => {
-        const loaded = yaml.load(rawYaml) as Question[];
+      loader().then((rawYaml) => {
+        const loaded = yaml.load(rawYaml as string) as Question[];
         setQuestions(loaded);
         setCurrent(0);
         setScore(0);
