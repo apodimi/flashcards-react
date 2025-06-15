@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Stack,
-  Box,
-} from "@mui/material";
+import { Card, CardContent, Typography, Button, Stack } from "@mui/material";
 
 interface FlashCardProps {
   question: string;
@@ -15,6 +8,7 @@ interface FlashCardProps {
   correct: string;
   onAnswer: (answer: string) => void;
   onNext: () => void;
+  disableAll?: boolean;
 }
 
 const FlashCard: React.FC<FlashCardProps> = ({
@@ -23,14 +17,14 @@ const FlashCard: React.FC<FlashCardProps> = ({
   selected,
   correct,
   onAnswer,
-  onNext,
+  disableAll = false,
 }) => {
   return (
     <Card
       sx={{
         width: "90%",
         maxWidth: 600,
-        margin: "2rem auto",
+        margin: "0 auto",
         padding: { xs: 2, sm: 3 },
       }}
     >
@@ -38,42 +32,36 @@ const FlashCard: React.FC<FlashCardProps> = ({
         <Typography variant="h6" gutterBottom>
           {question}
         </Typography>
+
         <Stack spacing={2} mt={2}>
           {options.map((opt, idx) => {
+            // Αποφασίζουμε το χρώμα και το στυλ
             let variant: "contained" | "outlined" = "outlined";
             if (selected) {
               if (opt === correct) variant = "contained";
               else if (opt === selected) variant = "outlined";
             }
+
+            let color: "primary" | "success" | "error" = "primary";
+            if (selected) {
+              if (opt === correct) color = "success";
+              else if (opt === selected) color = "error";
+            }
+
             return (
               <Button
                 key={idx}
                 fullWidth
                 variant={variant}
-                color={
-                  selected
-                    ? opt === correct
-                      ? "success"
-                      : opt === selected
-                      ? "error"
-                      : "primary"
-                    : "primary"
-                }
+                color={color}
                 onClick={() => onAnswer(opt)}
-                disabled={!!selected}
+                disabled={disableAll && selected !== null}
               >
                 {opt}
               </Button>
             );
           })}
         </Stack>
-        {selected && (
-          <Box textAlign="center" mt={4}>
-            <Button variant="contained" onClick={onNext}>
-              Επόμενη
-            </Button>
-          </Box>
-        )}
       </CardContent>
     </Card>
   );
