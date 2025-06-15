@@ -35,17 +35,17 @@ const FlashCard: React.FC<FlashCardProps> = ({
 
         <Stack spacing={2} mt={2}>
           {options.map((opt, idx) => {
-            // Αποφασίζουμε το χρώμα και το στυλ
             let variant: "contained" | "outlined" = "outlined";
-            if (selected) {
-              if (opt === correct) variant = "contained";
-              else if (opt === selected) variant = "outlined";
-            }
-
             let color: "primary" | "success" | "error" = "primary";
+
             if (selected) {
-              if (opt === correct) color = "success";
-              else if (opt === selected) color = "error";
+              if (opt === correct) {
+                variant = "contained";
+                color = "success";
+              } else if (opt === selected) {
+                variant = "outlined";
+                color = "error";
+              }
             }
 
             return (
@@ -56,6 +56,7 @@ const FlashCard: React.FC<FlashCardProps> = ({
                 color={color}
                 onClick={() => onAnswer(opt)}
                 disabled={disableAll && selected !== null}
+                sx={{ textTransform: "none" }} // 👈 no uppercase
               >
                 {opt}
               </Button>

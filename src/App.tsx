@@ -1,32 +1,71 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import yaml from "js-yaml";
-import raw from "./data/questions.yaml?raw";
+import { categories } from "./data/categories";
 import FlashCard from "./components/FlashCard";
 import {
-  Button,
-  Typography,
-  Box,
-  LinearProgress,
   Container,
+  Typography,
+  Button,
+  Box,
   Stack,
+  LinearProgress,
 } from "@mui/material";
 
-const questions: any[] = yaml.load(raw) as any[];
+// Για να φορτώσουμε YAML δυναμικά με Vite
+const files = import.meta.glob("./data/*.yaml", {
+  query: "?raw",
+  import: "default",
+});
+
+interface Question {
+  question: string;
+  options: string[];
+  answer: string;
+}
 
 function App() {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [current, setCurrent] = useState(0);
   const [score, setScore] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
-  const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [answeredCorrectly, setAnsweredCorrectly] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
+  const [showResult, setShowResult] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(false);
 
-  // Χρονόμετρο
+  // ✔ Φορτώνει YAML μόλις επιλεγεί ενότητα
   useEffect(() => {
-    if (answeredCorrectly || showResult) return;
+    if (!selectedCategory) return;
+
+    const category = categories.find((c) => c.label === selectedCategory);
+    if (!category) return;
+
+    const path = `./data/${category.file}`;
+    const loader = files[path];
+
+    if (loader) {
+      loader().then((rawYaml: string) => {
+        const loaded = yaml.load(rawYaml) as Question[];
+        setQuestions(loaded);
+        setCurrent(0);
+        setScore(0);
+        setWrongCount(0);
+        setSelected(null);
+        setIsCorrect(null);
+        setAnsweredCorrectly(false);
+        setShowResult(false);
+        setTimeLeft(60);
+        setAutoAdvance(false);
+      });
+    }
+  }, [selectedCategory]);
+
+  // ⏱ Αντίστροφη μέτρηση
+  useEffect(() => {
+    if (answeredCorrectly || showResult || !questions.length) return;
 
     if (timeLeft === 0) {
       if (!answeredCorrectly && selected === null) {
@@ -42,14 +81,12 @@ function App() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [timeLeft, answeredCorrectly, showResult, selected]);
+  }, [timeLeft, answeredCorrectly, showResult, selected, questions]);
 
-  // Reset χρονόμετρου όταν αλλάζει ερώτηση
   useEffect(() => {
     setTimeLeft(60);
   }, [current]);
 
-  // Προχωρά αυτόματα όταν η απάντηση είναι σωστή
   useEffect(() => {
     if (autoAdvance) {
       const timer = setTimeout(() => {
@@ -69,7 +106,7 @@ function App() {
       setScore((prev) => prev + 1);
       setIsCorrect(true);
       setAnsweredCorrectly(true);
-      setAutoAdvance(true); // σημαία για auto-next
+      setAutoAdvance(true);
     } else {
       setWrongCount((prev) => prev + 1);
       setIsCorrect(false);
@@ -90,16 +127,51 @@ function App() {
   };
 
   const handleRestart = () => {
+    setSelectedCategory(null);
+    setQuestions([]);
     setCurrent(0);
     setScore(0);
     setWrongCount(0);
     setSelected(null);
     setIsCorrect(null);
     setAnsweredCorrectly(false);
-    setTimeLeft(60);
     setShowResult(false);
+    setTimeLeft(60);
     setAutoAdvance(false);
   };
+
+  if (!selectedCategory) {
+    return (
+      <Container maxWidth="sm">
+        <Box mt={10} textAlign="center">
+          <Typography variant="h5" gutterBottom>
+            Επιλογή Ενότητας
+          </Typography>
+          <Stack spacing={2} mt={4}>
+            {categories.map((cat) => (
+              <Button
+                key={cat.label}
+                variant="contained"
+                onClick={() => setSelectedCategory(cat.label)}
+              >
+                {cat.label}
+              </Button>
+            ))}
+          </Stack>
+        </Box>
+      </Container>
+    );
+  }
+
+  if (!questions.length) {
+    return (
+      <Container maxWidth="sm">
+        <Box mt={10} textAlign="center">
+          <Typography>Φόρτωση ερωτήσεων...</Typography>
+        </Box>
+      </Container>
+    );
+  }
 
   if (showResult) {
     return (
@@ -114,7 +186,7 @@ function App() {
           Λάθος: {wrongCount}
         </Typography>
         <Button variant="contained" onClick={handleRestart}>
-          Επανάληψη
+          Επιστροφή στην επιλογή ενότητας
         </Button>
       </Box>
     );
@@ -127,7 +199,6 @@ function App() {
           Ερώτηση {current + 1} από {questions.length}
         </Typography>
 
-        {/* Live στατιστικά */}
         <Stack
           direction="row"
           spacing={2}
@@ -142,14 +213,12 @@ function App() {
           </Typography>
         </Stack>
 
-        {/* Πρόοδος */}
         <LinearProgress
           variant="determinate"
           value={(current / questions.length) * 100}
           sx={{ height: 10, borderRadius: 5, mt: 2, mb: 2 }}
         />
 
-        {/* Χρονόμετρο */}
         <Box mb={1}>
           <Typography
             variant="body2"
@@ -183,7 +252,6 @@ function App() {
         disableAll={answeredCorrectly}
       />
 
-      {/* Feedback */}
       {selected !== null && (
         <Box textAlign="center" mt={3}>
           <Typography
@@ -197,7 +265,6 @@ function App() {
         </Box>
       )}
 
-      {/* Κουμπί Επόμενη μόνο σε λάθος */}
       {selected !== null && !isCorrect && (
         <Box textAlign="center" mt={2}>
           <Button variant="contained" onClick={handleNext}>
