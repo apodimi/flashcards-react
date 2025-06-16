@@ -8,4 +8,8 @@ export const categories = [
     label: "Ενότητα 3 - Ευρωπαϊκοί θεσμοί και δίκαιο",
     file: "enotita_3_europaikoi_thesmoi_kai_dikaio.yaml",
   },
+  {
+    label: "Ενότητα 4 - Οικονομικές Επιστήμες",
+    file: "enotita_4_oikonomikes_epistimes.yaml",
+  },
 ];
